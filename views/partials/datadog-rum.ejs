@@ -1,0 +1,39 @@
+<% if (typeof datadogRum !== 'undefined' && datadogRum.enabled) { %>
+<!-- Datadog RUM -->
+<script>
+  (function(h,o,u,n,d) {
+    h=h[d]=h[d]||{q:[],onReady:function(c){h.q.push(c)}}
+    d=o.createElement(u);d.async=1;d.src=n
+    n=o.getElementsByTagName(u)[0];n.parentNode.insertBefore(d,n)
+  })(window,document,'script','https://www.datadoghq-browser-agent.com/us1/v5/datadog-rum.js','DD_RUM')
+  window.DD_RUM.onReady(function() {
+    window.DD_RUM.init({
+      clientToken: '<%= datadogRum.clientToken %>',
+      applicationId: '<%= datadogRum.applicationId %>',
+      site: '<%= datadogRum.site || "datadoghq.com" %>',
+      service: '<%= datadogRum.service || "barkmart" %>',
+      env: '<%= datadogRum.env || "production" %>',
+      version: '<%= datadogRum.version || "1.0.0" %>',
+      sessionSampleRate: <%= datadogRum.sessionSampleRate || 100 %>,
+      sessionReplaySampleRate: <%= datadogRum.sessionReplaySampleRate || 20 %>,
+      trackUserInteractions: true,
+      trackResources: true,
+      trackLongTasks: true,
+      defaultPrivacyLevel: 'mask-user-input'
+    });
+    <% if (user) { %>
+    // Set user context for RUM
+    window.DD_RUM.setUser({
+      id: '<%= user.id %>',
+      email: '<%= user.email %>',
+      name: '<%= user.first_name %> <%= user.last_name %>',
+      is_admin: <%= user.is_admin || false %>
+    });
+    <% } %>
+    <% if (typeof isAdminPanel !== 'undefined' && isAdminPanel) { %>
+    // Add global context for admin panel
+    window.DD_RUM.setGlobalContextProperty('section', 'admin');
+    <% } %>
+  });
+</script>
+<% } %>

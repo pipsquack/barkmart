@@ -1,0 +1,34 @@
+/* Additional custom styles */
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+.navbar-brand {
+  font-weight: bold;
+  color: #ff6b35 !important;
+}
+
+.btn-primary {
+  background-color: #ff6b35;
+  border-color: #ff6b35;
+}
+
+.btn-primary:hover {
+  background-color: #e5522e;
+  border-color: #e5522e;
+}
+
+.product-card {
+  transition: transform 0.2s;
+}
+
+.product-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.cart-badge {
+  position: relative;
+  top: -10px;
+  left: -10px;
+}

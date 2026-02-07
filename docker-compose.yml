@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:18.1-alpine
+    container_name: barkmart-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-barkmart}
+      POSTGRES_USER: ${POSTGRES_USER:-barkmart}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U barkmart"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    container_name: barkmart-app
+    env_file:
+      - .env
+    environment:
+      # Override POSTGRES_HOST for Docker networking (app constructs DATABASE_URL automatically)
+      POSTGRES_HOST: postgres
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./public/uploads:/app/public/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: sh -c "npm run db:migrate && npm run db:seed && node server.js"
+
+volumes:
+  postgres_data:

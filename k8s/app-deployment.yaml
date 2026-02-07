@@ -1,0 +1,152 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: barkmart-app
+  namespace: barkmart
+  labels:
+    app: barkmart
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: barkmart
+  template:
+    metadata:
+      labels:
+        app: barkmart
+    spec:
+      containers:
+      - name: barkmart
+        image: YOUR_DOCKER_REGISTRY/barkmart:latest  # Replace with your image
+        ports:
+        - containerPort: 3000
+          name: http
+        env:
+        - name: NODE_ENV
+          valueFrom:
+            configMapKeyRef:
+              name: barkmart-config
+              key: NODE_ENV
+        - name: PORT
+          valueFrom:
+            configMapKeyRef:
+              name: barkmart-config
+              key: PORT
+        # PostgreSQL configuration (DATABASE_URL is constructed by the app)
+        - name: POSTGRES_HOST
+          value: "postgres-service"  # Override for K8s networking
+        - name: POSTGRES_PORT
+          valueFrom:
+            secretKeyRef:
+              name: barkmart-secret
+              key: POSTGRES_PORT
+        - name: POSTGRES_DB
+          valueFrom:
+            secretKeyRef:
+              name: barkmart-secret
+              key: POSTGRES_DB
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: barkmart-secret
+              key: POSTGRES_USER
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: barkmart-secret
+              key: POSTGRES_PASSWORD
+        - name: SESSION_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: barkmart-secret
+              key: SESSION_SECRET
+        # Datadog RUM Configuration
+        - name: DD_RUM_ENABLED
+          valueFrom:
+            configMapKeyRef:
+              name: barkmart-config
+              key: DD_RUM_ENABLED
+        - name: DD_RUM_CLIENT_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: barkmart-secret
+              key: DD_RUM_CLIENT_TOKEN
+        - name: DD_RUM_APPLICATION_ID
+          valueFrom:
+            secretKeyRef:
+              name: barkmart-secret
+              key: DD_RUM_APPLICATION_ID
+        - name: DD_RUM_SITE
+          valueFrom:
+            configMapKeyRef:
+              name: barkmart-config
+              key: DD_RUM_SITE
+        - name: DD_RUM_SERVICE
+          valueFrom:
+            configMapKeyRef:
+              name: barkmart-config
+              key: DD_RUM_SERVICE
+        - name: DD_RUM_SESSION_SAMPLE_RATE
+          valueFrom:
+            configMapKeyRef:
+              name: barkmart-config
+              key: DD_RUM_SESSION_SAMPLE_RATE
+        - name: DD_RUM_SESSION_REPLAY_SAMPLE_RATE
+          valueFrom:
+            configMapKeyRef:
+              name: barkmart-config
+              key: DD_RUM_SESSION_REPLAY_SAMPLE_RATE
+        - name: DD_ENV
+          valueFrom:
+            configMapKeyRef:
+              name: barkmart-config
+              key: DD_ENV
+        - name: APP_VERSION
+          valueFrom:
+            configMapKeyRef:
+              name: barkmart-config
+              key: APP_VERSION
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+        volumeMounts:
+        - name: uploads
+          mountPath: /app/public/uploads
+      volumes:
+      - name: uploads
+        emptyDir: {}  # In production, use PVC for persistent storage
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: barkmart-service
+  namespace: barkmart
+  labels:
+    app: barkmart
+spec:
+  type: LoadBalancer  # Change to ClusterIP if using Ingress
+  ports:
+  - port: 80
+    targetPort: 3000
+    protocol: TCP
+    name: http
+  selector:
+    app: barkmart
