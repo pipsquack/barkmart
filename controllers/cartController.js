@@ -13,7 +13,15 @@ const getOrCreateCart = async (userId) => {
 
   if (!cart) {
     cart = await Cart.create({ user_id: userId });
-    cart.items = [];
+    // Re-fetch with associations after creation
+    cart = await Cart.findOne({
+      where: { user_id: userId },
+      include: [{
+        model: CartItem,
+        as: 'items',
+        include: [{ model: Product, as: 'product' }]
+      }]
+    });
   }
 
   return cart;
@@ -24,9 +32,13 @@ exports.show = async (req, res) => {
   try {
     const cart = await getOrCreateCart(req.user.id);
 
+    // Ensure items array exists
+    const items = cart.items || [];
+
     const cartWithTotal = {
       ...cart.toJSON(),
-      total: cart.items.reduce((sum, item) => {
+      items: items,
+      total: items.reduce((sum, item) => {
         return sum + (parseFloat(item.product.price) * item.quantity);
       }, 0)
     };

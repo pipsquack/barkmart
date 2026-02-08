@@ -34,10 +34,13 @@ app.use(methodOverride('_method'));
 // Static files
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Construct DATABASE_URL from POSTGRES_* environment variables
+const DATABASE_URL = `postgresql://${process.env.POSTGRES_USER}:${process.env.POSTGRES_PASSWORD}@${process.env.POSTGRES_HOST}:${process.env.POSTGRES_PORT}/${process.env.POSTGRES_DB}`;
+
 // Session configuration
 app.use(session({
   store: new pgSession({
-    conString: process.env.DATABASE_URL,
+    conString: DATABASE_URL,
     tableName: 'session'
   }),
   secret: process.env.SESSION_SECRET,
